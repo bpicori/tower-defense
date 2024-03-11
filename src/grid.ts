@@ -1,28 +1,35 @@
-import { CANVAS_HEIGHT, CANVAS_ID, CANVAS_WIDTH, COLS, ROWS, getCanvasInitialPosition } from "./main";
-import { drawObstacle } from "./obstacle";
+import {
+  CANVAS_HEIGHT,
+  GRID_CANVAS_ID,
+  CANVAS_WIDTH,
+  COLS,
+  ROWS,
+  getCanvasInitialPosition,
+  Component,
+  GameState,
+} from "./main";
 
-export class Grid {
+// Position in grid coordinates
+export interface Position {
+  x: number;
+  y: number;
+}
+
+export class Grid implements Component {
   cellSize: number;
+  loaded: boolean = false;
   constructor() {
     this.cellSize = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
-    addEventListener("click", (event) => {
-      const canvas = document.getElementById(CANVAS_ID) as HTMLCanvasElement;
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      // get cell position
-      const { startX, startY } = getCanvasInitialPosition();
-      const cellX = Math.floor((x - startX) / this.cellSize);
-      const cellY = Math.floor((y - startY) / this.cellSize);
-
-      console.log(cellX, cellY);
-      drawObstacle({ x: cellX, y: cellY });
-    });
   }
 
-  draw() {
-    const canvas = document.getElementById(CANVAS_ID) as HTMLCanvasElement;
+  updateState(state: GameState) {
+    return state;
+  }
+
+  render(state: GameState) {
+    if (this.loaded) return;
+    const { obstacles } = state;
+    const canvas = document.getElementById(GRID_CANVAS_ID) as HTMLCanvasElement;
     const ctx = canvas.getContext("2d")!;
 
     const { startX, startY } = getCanvasInitialPosition();
@@ -41,5 +48,19 @@ export class Grid {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 0.5;
     ctx.stroke();
+
+    // Draw obstacles
+    for (const obstacle of obstacles) {
+      const cellSize = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
+      const { startX, startY } = getCanvasInitialPosition();
+
+      ctx.beginPath();
+      ctx.rect(startX + obstacle.x * cellSize, startY + obstacle.y * cellSize, cellSize, cellSize);
+      ctx.fillStyle = "black";
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    this.loaded = true;
   }
 }
