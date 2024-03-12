@@ -1,6 +1,7 @@
 import { Circle } from "./circle";
 import { Grid, Position } from "./grid";
-import { generateRandomObstacles } from "./helper";
+import map from "./maps/map1.json";
+import { GridNavigator } from "./navigator";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -30,53 +31,72 @@ export function getCanvasInitialPosition() {
 
 export interface GameState {
   obstacles: Position[];
-  entry: Position;
-  exit: Position;
+  start: Position;
+  target: Position;
+  enemies: {
+    id: string;
+    currentPosition: Position;
+    path: Position[];
+    targetPositionIndex: number;
+    life: number;
+    speed: number;
+  }[];
 }
 
 export interface Component {
-  init?: (state: GameState) => void;
-  updateState: (state: GameState) => GameState;
-  render: (state: GameState) => Promise<void> | void;
+  render: (state: GameState) => Promise<GameState> | GameState;
 }
 
-const components: Component[] = [new Grid(), new Circle()];
-
-function updateGameState(previousState: GameState) {
-  let state = { ...previousState };
-  for (const component of components) {
-    state = component.updateState(state);
-  }
-
-  return state;
-}
-
-function renderGame(state: GameState): void {
-  for (const component of components) {
-    component.render(state);
-  }
-}
+const components: Component[] = [new Grid()];
 
 async function gameLoop(state: GameState) {
-  const gameState = updateGameState(state);
+  let gameState = { ...state };
 
-  renderGame(gameState);
+  for (const component of components) {
+    gameState = await component.render(gameState);
+  }
 
   requestAnimationFrame(() => gameLoop(gameState));
 }
 
 async function main() {
+  const { startX, startY } = getCanvasInitialPosition();
+  const start = { x: 0, y: 0 };
+  const target = { x: 9, y: 9 };
+  const cellSize = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
+  const obstacles = map;
+
+  const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  for (const obstacle of obstacles) {
+    g[obstacle.y][obstacle.x] = 1;
+  }
+
+  const navigator = new GridNavigator(g, start, target);
+  const path = navigator.findPath();
+  if (!path) {
+    throw new Error("No path found");
+  }
+
   const initialState: GameState = {
-    obstacles: generateRandomObstacles(),
-    entry: { x: 0, y: 0 },
-    exit: { x: 9, y: 9 },
+    obstacles,
+    start,
+    target,
+    enemies: [
+      {
+        id: "enemy1",
+        currentPosition: { x: startX, y: startY },
+        targetPositionIndex: 0,
+        path: path.map((pos) => ({
+          x: startX + pos.x * cellSize + cellSize / 2,
+          y: startY + pos.y * cellSize + cellSize / 2,
+        })),
+        life: 100,
+        speed: 1,
+      },
+    ],
   };
 
-  for (const component of components) {
-    if (component.init) {
-      component.init(initialState);
-    }
-  }
+  components.push(new Circle("enemy1"));
 
   gameLoop(initialState);
 }

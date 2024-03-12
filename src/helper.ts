@@ -1,5 +1,4 @@
-import { Position } from "./grid";
-import { COLS, GRID_CANVAS_ID, ROWS, getCanvasInitialPosition } from "./main";
+import { GRID_CANVAS_ID, getCanvasInitialPosition } from "./main";
 
 export const findMousePosition = (cellSize: number, event: MouseEvent) => {
   const canvas = document.getElementById(GRID_CANVAS_ID) as HTMLCanvasElement;
@@ -13,18 +12,4 @@ export const findMousePosition = (cellSize: number, event: MouseEvent) => {
   const cellY = Math.floor((y - startY) / cellSize);
 
   return { x: cellX, y: cellY };
-};
-
-export const generateRandomObstacles = () => {
-  const obstacles = new Set<Position>();
-
-  while (obstacles.size < 10) {
-    const x = Math.floor(Math.random() * COLS);
-    const y = Math.floor(Math.random() * ROWS);
-    if (x === 0 && y === 0) continue;
-    if (x === COLS - 1 && y === ROWS - 1) continue;
-    obstacles.add({ x, y });
-  }
-
-  return Array.from(obstacles);
 };

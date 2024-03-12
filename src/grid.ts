@@ -22,12 +22,8 @@ export class Grid implements Component {
     this.cellSize = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
   }
 
-  updateState(state: GameState) {
-    return state;
-  }
-
   render(state: GameState) {
-    if (this.loaded) return;
+    if (this.loaded) return state;
     const { obstacles } = state;
     const canvas = document.getElementById(GRID_CANVAS_ID) as HTMLCanvasElement;
     const ctx = canvas.getContext("2d")!;
@@ -62,5 +58,7 @@ export class Grid implements Component {
     }
 
     this.loaded = true;
+
+    return state;
   }
 }
