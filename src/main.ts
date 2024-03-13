@@ -12,9 +12,11 @@ export const ROWS = 10;
 export const COLS = 10;
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
+  <button id="addEnemy">Add Enemy</button>
   <div style="position: relative;">
     <canvas id=${GRID_CANVAS_ID} width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" style="position: absolute; left: 0; top: 0; z-index: 0"></canvas>
     <canvas id=${ACTION_CANVAS_ID} width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" style="position: absolute; left: 0; top: 0; z-index: 1"></canvas>
+
   </div>
 `;
 
@@ -49,8 +51,22 @@ export interface Component {
 
 const components: Component[] = [new Grid()];
 
+let shouldAddEnemy = false;
+
+const addEnemyButton = document.getElementById("addEnemy")!;
+addEnemyButton.addEventListener("click", () => {
+  shouldAddEnemy = true;
+});
+
 async function gameLoop(state: GameState) {
   let gameState = { ...state };
+
+  if (shouldAddEnemy) {
+    const id = `enemy${gameState.enemies.length + 1}`;
+    gameState.enemies.push(generateEnemy(id));
+    components.push(new Circle(id));
+    shouldAddEnemy = false;
+  }
 
   for (const component of components) {
     gameState = await component.render(gameState);
@@ -59,7 +75,7 @@ async function gameLoop(state: GameState) {
   requestAnimationFrame(() => gameLoop(gameState));
 }
 
-async function main() {
+function generateEnemy(id: string) {
   const { startX, startY } = getCanvasInitialPosition();
   const start = { x: 0, y: 0 };
   const target = { x: 9, y: 9 };
@@ -77,23 +93,31 @@ async function main() {
     throw new Error("No path found");
   }
 
+  return {
+    id,
+    currentPosition: { x: startX, y: startY },
+    targetPositionIndex: 0,
+    path: path.map((pos) => ({
+      x: startX + pos.x * cellSize + cellSize / 2,
+      y: startY + pos.y * cellSize + cellSize / 2,
+    })),
+    life: 100,
+    speed: 1,
+  };
+}
+
+async function main() {
+  const start = { x: 0, y: 0 };
+  const target = { x: 9, y: 9 };
+  const obstacles = map;
+
+  const enemy = generateEnemy("enemy1");
+
   const initialState: GameState = {
     obstacles,
     start,
     target,
-    enemies: [
-      {
-        id: "enemy1",
-        currentPosition: { x: startX, y: startY },
-        targetPositionIndex: 0,
-        path: path.map((pos) => ({
-          x: startX + pos.x * cellSize + cellSize / 2,
-          y: startY + pos.y * cellSize + cellSize / 2,
-        })),
-        life: 100,
-        speed: 1,
-      },
-    ],
+    enemies: [enemy],
   };
 
   components.push(new Circle("enemy1"));

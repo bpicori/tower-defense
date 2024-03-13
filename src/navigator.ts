@@ -1,5 +1,3 @@
-import { Direction } from "./circle";
-
 type Grid = number[][];
 type Point = { x: number; y: number };
 
@@ -75,19 +73,5 @@ export class GridNavigator {
     } else {
       return null;
     }
-  }
-
-  convertPathToMoves(path: Point[]): Direction[] {
-    const moves: Direction[] = [];
-    for (let i = 1; i < path.length; i++) {
-      const dx = path[i].x - path[i - 1].x;
-      const dy = path[i].y - path[i - 1].y;
-
-      if (dx === 1) moves.push(Direction.Right);
-      else if (dx === -1) moves.push(Direction.Left);
-      else if (dy === 1) moves.push(Direction.Down);
-      else if (dy === -1) moves.push(Direction.Up);
-    }
-    return moves;
   }
 }

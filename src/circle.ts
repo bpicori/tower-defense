@@ -1,20 +1,5 @@
 import { Position } from "./grid";
-import {
-  ACTION_CANVAS_ID,
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
-  COLS,
-  Component,
-  GameState,
-  ROWS,
-} from "./main";
-
-export enum Direction {
-  Up = "Up",
-  Down = "Down",
-  Left = "Left",
-  Right = "Right",
-}
+import { ACTION_CANVAS_ID, CANVAS_HEIGHT, CANVAS_WIDTH, COLS, Component, GameState, ROWS } from "./main";
 
 export class Circle implements Component {
   private cellSize: number = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
@@ -35,7 +20,6 @@ export class Circle implements Component {
 
     if (targetPositionIndex < path.length) {
       const targetPosition = path[targetPositionIndex];
-      if (!currentPosition) return state;
 
       const deltaX = targetPosition.x - currentPosition.x;
       const deltaY = targetPosition.y - currentPosition.y;
@@ -45,32 +29,10 @@ export class Circle implements Component {
         const nextTargetPositionIndex = targetPositionIndex + 1;
 
         if (nextTargetPositionIndex >= path.length) {
-          return {
-            ...state,
-            enemies: state.enemies.map((enemy) => {
-              if (enemy.id === this.id) {
-                return {
-                  ...enemy,
-                  targetPositionIndex: nextTargetPositionIndex,
-                };
-              }
-              return enemy;
-            }),
-          };
+          return this.newState(state, nextTargetPositionIndex, currentPosition);
         }
 
-        return {
-          ...state,
-          enemies: state.enemies.map((enemy) => {
-            if (enemy.id === this.id) {
-              return {
-                ...enemy,
-                targetPositionIndex: nextTargetPositionIndex,
-              };
-            }
-            return enemy;
-          }),
-        };
+        return this.newState(state, nextTargetPositionIndex, currentPosition);
       }
 
       const stepSize = Math.min(speed, distance);
@@ -83,18 +45,7 @@ export class Circle implements Component {
 
       this.drawCircle(currentPosition);
 
-      return {
-        ...state,
-        enemies: state.enemies.map((enemy) => {
-          if (enemy.id === this.id) {
-            return {
-              ...enemy,
-              currentPosition,
-            };
-          }
-          return enemy;
-        }),
-      };
+      return this.newState(state, targetPositionIndex, currentPosition);
     }
 
     return state;
@@ -121,5 +72,21 @@ export class Circle implements Component {
     const clearanceStartY = position.y - this.radius - clearancePadding;
 
     ctx.clearRect(clearanceStartX, clearanceStartY, clearanceAreaSize, clearanceAreaSize);
+  }
+
+  private newState(state: GameState, targetPositionIndex: number, currentPosition: Position) {
+    return {
+      ...state,
+      enemies: state.enemies.map((enemy) => {
+        if (enemy.id === this.id) {
+          return {
+            ...enemy,
+            targetPositionIndex,
+            currentPosition,
+          };
+        }
+        return enemy;
+      }),
+    };
   }
 }
