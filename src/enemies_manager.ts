@@ -42,14 +42,17 @@ export class EnemiesManager implements Component {
 
   update(state: GameState): GameState {
     const { enemies } = state;
+    const aliveEnemies = enemies.filter((enemy) => enemy.status === "alive");
     const updatedEnemies: Enemy[] = [];
     let { playerLife } = state;
 
-    for (const enemy of enemies) {
+    for (const enemy of aliveEnemies) {
       const newEnemy = this.updateEnemy(enemy, state);
+
       if (enemy.status !== "escaped" && newEnemy.status === "escaped") {
         playerLife -= 1;
       }
+
       updatedEnemies.push(newEnemy);
     }
 

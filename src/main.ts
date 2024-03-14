@@ -1,6 +1,9 @@
+import "./style.css";
+
 import { EnemiesManager, Enemy } from "./enemies_manager";
 import { Grid, Position } from "./grid";
 import map from "./maps/map1.json";
+import { PlayerLife } from "./players_life";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -11,9 +14,11 @@ export const ROWS = 10;
 export const COLS = 10;
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
-  <button id="addEnemy">Add Enemy</button>
-  <div style="position: relative;">
-    <canvas id=${ACTION_CANVAS_ID} width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" style="position: absolute; left: 0; top: 0; z-index: 1"></canvas>
+  <div class="canvas-container">
+    <div class="player-life">
+      Player life: <span id="playerLife"></span> 
+    </div>
+    <canvas id="${ACTION_CANVAS_ID}" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}"></canvas>
   </div>
 `;
 
@@ -46,16 +51,14 @@ export interface Component {
 enum ComponentsMap {
   Grid = "Grid",
   EnemiesManager = "EnemiesManager",
+  PlayerLife = "PlayerLife",
 }
 
 const componentsMap: Record<ComponentsMap, Component> = {
   [ComponentsMap.Grid]: new Grid(),
   [ComponentsMap.EnemiesManager]: new EnemiesManager(),
+  [ComponentsMap.PlayerLife]: new PlayerLife(),
 };
-
-// const components: Component[] = [new Grid(), new EnemiesManager()];
-
-// const addEnemyButton = document.getElementById("addEnemy")!;
 
 const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
 const INITIAL_STATE: GameState = {
