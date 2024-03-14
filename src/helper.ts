@@ -8,10 +8,11 @@ export const findMousePosition = (cellSize: number, event: MouseEvent) => {
   const y = event.clientY - rect.top;
 
   // get cell position
-  const { startX, startY } = getCanvasInitialPosition();
+  const { x: startX, y: startY } = getCanvasInitialPosition();
   const cellX = Math.floor((x - startX) / cellSize);
   const cellY = Math.floor((y - startY) / cellSize);
 
+  console.log(cellX, cellY);
   return { x: cellX, y: cellY };
 };
 

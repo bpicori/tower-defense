@@ -1,7 +1,6 @@
-import { Circle } from "./circle";
+import { EnemiesManager, Enemy } from "./enemies_manager";
 import { Grid, Position } from "./grid";
 import map from "./maps/map1.json";
-import { GridNavigator } from "./navigator";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -14,115 +13,119 @@ export const COLS = 10;
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <button id="addEnemy">Add Enemy</button>
   <div style="position: relative;">
-    <canvas id=${GRID_CANVAS_ID} width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" style="position: absolute; left: 0; top: 0; z-index: 0"></canvas>
     <canvas id=${ACTION_CANVAS_ID} width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" style="position: absolute; left: 0; top: 0; z-index: 1"></canvas>
-
   </div>
 `;
 
-export function getCanvasInitialPosition() {
-  const canvas = document.getElementById("gridCanvas") as HTMLCanvasElement;
+export function getCanvasInitialPosition(): Position {
+  const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
 
   const gridWidth = (CANVAS_WIDTH / COLS) * COLS;
   const gridHeight = (CANVAS_HEIGHT / ROWS) * ROWS;
 
   const startX = (canvas.width - gridWidth) / 2;
   const startY = (canvas.height - gridHeight) / 2;
-  return { startX, startY };
+  return { x: startX, y: startY };
 }
 
 export interface GameState {
   obstacles: Position[];
   start: Position;
   target: Position;
-  enemies: {
-    id: string;
-    currentPosition: Position;
-    path: Position[];
-    targetPositionIndex: number;
-    life: number;
-    speed: number;
-  }[];
+  canvasStartPosition: Position;
+  cellSize: number;
+  playerLife: number;
+  enemies: Enemy[];
 }
 
 export interface Component {
-  render: (state: GameState) => Promise<GameState> | GameState;
+  update: (state: GameState) => GameState;
+  render: (state: GameState) => void;
 }
 
-const components: Component[] = [new Grid()];
+enum ComponentsMap {
+  Grid = "Grid",
+  EnemiesManager = "EnemiesManager",
+}
 
-let shouldAddEnemy = false;
+const componentsMap: Record<ComponentsMap, Component> = {
+  [ComponentsMap.Grid]: new Grid(),
+  [ComponentsMap.EnemiesManager]: new EnemiesManager(),
+};
 
-const addEnemyButton = document.getElementById("addEnemy")!;
-addEnemyButton.addEventListener("click", () => {
-  shouldAddEnemy = true;
-});
+// const components: Component[] = [new Grid(), new EnemiesManager()];
+
+// const addEnemyButton = document.getElementById("addEnemy")!;
+
+const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
+const INITIAL_STATE: GameState = {
+  obstacles: map,
+  start: { x: 0, y: 0 },
+  target: { x: 9, y: 9 },
+  canvasStartPosition: getCanvasInitialPosition(),
+  cellSize: CELL_SIZE,
+  playerLife: 100,
+  enemies: [
+    {
+      id: "1",
+      speed: 1,
+      targetPositionIndex: 0,
+      status: "alive",
+    },
+  ],
+};
+
+function processUserInput(state: GameState, userInput: { click?: Position }): GameState {
+  let newState = { ...state }; // Create a copy of the current state
+
+  if (userInput.click) {
+    const enemyManager = componentsMap[ComponentsMap.EnemiesManager] as EnemiesManager;
+    newState = enemyManager.addEnemy(newState, userInput.click);
+    userInput.click = undefined;
+  }
+
+  return newState;
+}
 
 async function gameLoop(state: GameState) {
-  let gameState = { ...state };
+  state = processUserInput(state, userInput);
 
-  if (shouldAddEnemy) {
-    const id = `enemy${gameState.enemies.length + 1}`;
-    gameState.enemies.push(generateEnemy(id));
-    components.push(new Circle(id));
-    shouldAddEnemy = false;
+  for (const component of Object.values(componentsMap)) {
+    state = component.update(state);
   }
 
-  for (const component of components) {
-    gameState = await component.render(gameState);
+  // clear canvas
+  const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (const component of Object.values(componentsMap)) {
+    component.render(state);
   }
 
-  requestAnimationFrame(() => gameLoop(gameState));
+  requestAnimationFrame(() => gameLoop(state));
 }
 
-function generateEnemy(id: string) {
-  const { startX, startY } = getCanvasInitialPosition();
-  const start = { x: 0, y: 0 };
-  const target = { x: 9, y: 9 };
-  const cellSize = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
-  const obstacles = map;
-
-  const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-  for (const obstacle of obstacles) {
-    g[obstacle.y][obstacle.x] = 1;
-  }
-
-  const navigator = new GridNavigator(g, start, target);
-  const path = navigator.findPath();
-  if (!path) {
-    throw new Error("No path found");
-  }
-
-  return {
-    id,
-    currentPosition: { x: startX, y: startY },
-    targetPositionIndex: 0,
-    path: path.map((pos) => ({
-      x: startX + pos.x * cellSize + cellSize / 2,
-      y: startY + pos.y * cellSize + cellSize / 2,
-    })),
-    life: 100,
-    speed: 1,
-  };
-}
+const userInput: { click?: Position } = {
+  click: undefined,
+};
 
 async function main() {
-  const start = { x: 0, y: 0 };
-  const target = { x: 9, y: 9 };
-  const obstacles = map;
+  document.addEventListener("click", (event) => {
+    const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
 
-  const enemy = generateEnemy("enemy1");
+    // get cell position
+    const { x: startX, y: startY } = getCanvasInitialPosition();
+    const cellX = Math.floor((x - startX) / CELL_SIZE);
+    const cellY = Math.floor((y - startY) / CELL_SIZE);
 
-  const initialState: GameState = {
-    obstacles,
-    start,
-    target,
-    enemies: [enemy],
-  };
+    userInput.click = { x: cellX, y: cellY };
+  });
 
-  components.push(new Circle("enemy1"));
-
-  gameLoop(initialState);
+  gameLoop(INITIAL_STATE);
 }
 
 main();
