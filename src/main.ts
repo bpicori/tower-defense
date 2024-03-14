@@ -2,7 +2,6 @@ import "./style.css";
 
 import { EnemiesManager, Enemy } from "./enemies_manager";
 import { Grid, Position } from "./grid";
-import map from "./maps/map1.json";
 import { PlayerLife } from "./players_life";
 
 export const GRID_CANVAS_ID = "gridCanvas";
@@ -14,11 +13,17 @@ export const ROWS = 10;
 export const COLS = 10;
 
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
-  <div class="canvas-container">
-    <div class="player-life">
-      Player life: <span id="playerLife"></span> 
+  <div class="game-container">
+    <div class="tower-panel">
+      <div class="tower" draggable="true" id="tower">Tower</div>
+      <div class="obstacle" draggable="true" id="obstacle">Obstacle</div>
     </div>
-    <canvas id="${ACTION_CANVAS_ID}" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}"></canvas>
+    <div class="canvas-container">
+      <div class="player-life">
+        Player life: <span id="playerLife"></span>
+      </div>
+      <canvas id="${ACTION_CANVAS_ID}" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}"></canvas>
+    </div>
   </div>
 `;
 
@@ -62,7 +67,7 @@ const componentsMap: Record<ComponentsMap, Component> = {
 
 const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
 const INITIAL_STATE: GameState = {
-  obstacles: map,
+  obstacles: [],
   start: { x: 0, y: 0 },
   target: { x: 9, y: 9 },
   canvasStartPosition: getCanvasInitialPosition(),
@@ -78,13 +83,18 @@ const INITIAL_STATE: GameState = {
   ],
 };
 
-function processUserInput(state: GameState, userInput: { click?: Position }): GameState {
+function processUserInput(state: GameState, userEvents: UserEvents): GameState {
   let newState = { ...state }; // Create a copy of the current state
 
-  if (userInput.click) {
+  if (userEvents.click) {
     const enemyManager = componentsMap[ComponentsMap.EnemiesManager] as EnemiesManager;
-    newState = enemyManager.addEnemy(newState, userInput.click);
-    userInput.click = undefined;
+    newState = enemyManager.addEnemy(newState, userEvents.click);
+    userEvents.click = undefined;
+  }
+
+  if (userEvents.obstacleDropped) {
+    newState.obstacles.push(userEvents.obstacleDropped);
+    userEvents.obstacleDropped = undefined;
   }
 
   return newState;
@@ -109,14 +119,30 @@ async function gameLoop(state: GameState) {
   requestAnimationFrame(() => gameLoop(state));
 }
 
-const userInput: { click?: Position } = {
+interface UserEvents {
+  click?: Position;
+  obstacleDropped?: Position;
+}
+
+const userInput: UserEvents = {
   click: undefined,
+  obstacleDropped: undefined,
 };
 
 async function main() {
   document.addEventListener("click", (event) => {
     const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
     const rect = canvas.getBoundingClientRect();
+
+    if (
+      event.clientX < rect.left ||
+      event.clientX > rect.right ||
+      event.clientY < rect.top ||
+      event.clientY > rect.bottom
+    ) {
+      return; // Click was outside, exit the function.
+    }
+
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
@@ -126,6 +152,37 @@ async function main() {
     const cellY = Math.floor((y - startY) / CELL_SIZE);
 
     userInput.click = { x: cellX, y: cellY };
+  });
+
+  // Towers drag and drop logic
+  const tower = document.getElementById("tower")!;
+  const obstacle = document.getElementById("obstacle")!;
+  const canvas = document.getElementById(ACTION_CANVAS_ID)!;
+
+  tower.addEventListener("dragstart", (event) => {
+    event.dataTransfer!.setData("text/plain", tower.id);
+  });
+
+  obstacle.addEventListener("dragstart", (event) => {
+    event.dataTransfer!.setData("text/plain", obstacle.id);
+  });
+
+  canvas.addEventListener("dragover", (event) => {
+    event.preventDefault(); // Necessary to allow dropping
+  });
+
+  canvas.addEventListener("drop", (event) => {
+    event.preventDefault();
+
+    const x = event.clientX - canvas.offsetLeft;
+    const y = event.clientY - canvas.offsetTop;
+
+    // calculate cell position
+    const { x: startX, y: startY } = getCanvasInitialPosition();
+    const cellX = Math.floor((x - startX) / CELL_SIZE);
+    const cellY = Math.floor((y - startY) / CELL_SIZE);
+
+    userInput.obstacleDropped = { x: cellX, y: cellY };
   });
 
   gameLoop(INITIAL_STATE);

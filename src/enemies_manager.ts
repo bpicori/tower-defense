@@ -12,7 +12,6 @@ export interface Enemy {
 }
 
 export class EnemiesManager implements Component {
-  constructor() {}
   addEnemy(state: GameState, position: Position): GameState {
     const { enemies } = state;
 

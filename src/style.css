@@ -1,20 +1,51 @@
-.canvas-container {
+.game-container {
   display: flex;
-  flex-direction: column; /* Stack items vertically */
-  align-items: center;   /* Center items horizontally */
-  justify-content: start; /* Align items to the start of the container along the main axis */
-  height: 100vh;         /* Take full viewport height */
-  width: 100%;           /* Take full width to allow centering */
+}
+
+.tower-panel {
+  width: 150px;
+  padding: 10px;
+  background-color: #ddd;
+  text-align: center;
+}
+
+.tower {
+  background-color: #fff;
+  margin: 5px 0;
+  padding: 10px;
+  border: 1px solid #000;
+  cursor: pointer;
+}
+
+.obstacle {
+  background-color: #fff;
+  margin: 5px 0;
+  padding: 10px;
+  border: 1px solid #000;
+  cursor: pointer;
+}
+
+.canvas-container {
+  margin-left: 20px;
 }
 
 .player-life {
-  color: #fff;                  /* White text color */
-  background-color: #4CAF50;    /* Green background */
-  padding: 10px;                /* Padding around the text */
-  border-radius: 5px;           /* Rounded corners */
-  margin-top: 10px;             /* Space between top of the container and life display */
-  margin-bottom: 20px;          /* Space between life display and canvas */
-  font-size: 1.2em;             /* Larger font size */
-  font-weight: bold;            /* Bold font */
-  width: fit-content;           /* Only take up as much width as necessary */
+  color: #fff;
+  /* White text color */
+  background-color: #4CAF50;
+  /* Green background */
+  padding: 10px;
+  /* Padding around the text */
+  border-radius: 5px;
+  /* Rounded corners */
+  margin-top: 10px;
+  /* Space between top of the container and life display */
+  margin-bottom: 20px;
+  /* Space between life display and canvas */
+  font-size: 1.2em;
+  /* Larger font size */
+  font-weight: bold;
+  /* Bold font */
+  width: fit-content;
+  /* Only take up as much width as necessary */
 }
