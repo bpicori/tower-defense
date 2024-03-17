@@ -104,19 +104,6 @@ export class EnemiesManager implements Component {
     return path[1];
   }
 
-  private findPath(obstacles: Position[], start: Position, target: Position): Position[] {
-    const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-    for (const obstacle of obstacles) {
-      g[obstacle.y][obstacle.x] = 1;
-    }
-    const path = new GridNavigator(g, start, target).findPath();
-    if (!path) {
-      throw new Error("No path found");
-    }
-
-    return path;
-  }
-
   private renderEnemy(enemy: Enemy, state: GameState) {
     const { currentPosition } = enemy;
     if (!currentPosition) return;

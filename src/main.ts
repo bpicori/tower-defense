@@ -4,6 +4,7 @@ import { EnemiesManager, Enemy } from "./enemies_manager";
 import { Grid, Position } from "./grid";
 import { PlayerLife } from "./players_life";
 import { UserInputManager } from "./user_input_manager";
+import map from "./maps/map1.json";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -69,10 +70,10 @@ export const SingletonComponents: Record<ComponentsMap, Component> = {
   [ComponentsMap.UserInputManager]: new UserInputManager(),
 };
 
-const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
+export const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
 
 const INITIAL_STATE: GameState = {
-  obstacles: [],
+  obstacles: map,
   start: { x: 0, y: 0 },
   target: { x: 9, y: 9 },
   canvasStartPosition: getCanvasInitialPosition(),
@@ -95,10 +96,7 @@ async function gameLoop(state: GameState) {
     state = component.update(state);
   }
 
-  // clear canvas
-  const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
-  const ctx = canvas.getContext("2d")!;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  clearCanvas();
 
   for (const component of Object.values(SingletonComponents)) {
     component.render(state);
@@ -107,64 +105,13 @@ async function gameLoop(state: GameState) {
   requestAnimationFrame(() => gameLoop(state));
 }
 
+function clearCanvas() {
+  const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
+  const ctx = canvas.getContext("2d")!;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
 async function main() {
-  document.addEventListener("click", (event) => {
-    const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
-    const rect = canvas.getBoundingClientRect();
-
-    if (
-      event.clientX < rect.left ||
-      event.clientX > rect.right ||
-      event.clientY < rect.top ||
-      event.clientY > rect.bottom
-    ) {
-      return; // Click was outside, exit the function.
-    }
-
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    // get cell position
-    const { x: startX, y: startY } = getCanvasInitialPosition();
-    const cellX = Math.floor((x - startX) / CELL_SIZE);
-    const cellY = Math.floor((y - startY) / CELL_SIZE);
-
-    const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
-    userInputManager.userEvents.click = { x: cellX, y: cellY };
-  });
-
-  // Towers drag and drop logic
-  const tower = document.getElementById("tower")!;
-  const obstacle = document.getElementById("obstacle")!;
-  const canvas = document.getElementById(ACTION_CANVAS_ID)!;
-
-  tower.addEventListener("dragstart", (event) => {
-    event.dataTransfer!.setData("text/plain", tower.id);
-  });
-
-  obstacle.addEventListener("dragstart", (event) => {
-    event.dataTransfer!.setData("text/plain", obstacle.id);
-  });
-
-  canvas.addEventListener("dragover", (event) => {
-    event.preventDefault(); // Necessary to allow dropping
-  });
-
-  canvas.addEventListener("drop", (event) => {
-    event.preventDefault();
-
-    const x = event.clientX - canvas.offsetLeft;
-    const y = event.clientY - canvas.offsetTop;
-
-    // calculate cell position
-    const { x: startX, y: startY } = getCanvasInitialPosition();
-    const cellX = Math.floor((x - startX) / CELL_SIZE);
-    const cellY = Math.floor((y - startY) / CELL_SIZE);
-
-    const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
-    userInputManager.userEvents.obstacleDropped = { x: cellX, y: cellY };
-  });
-
   gameLoop(INITIAL_STATE);
 }
 

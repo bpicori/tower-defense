@@ -1,6 +1,16 @@
 import { EnemiesManager } from "./enemies_manager";
 import { Position } from "./grid";
-import { COLS, Component, ComponentsMap, GameState, ROWS, SingletonComponents } from "./main";
+import {
+  ACTION_CANVAS_ID,
+  CELL_SIZE,
+  COLS,
+  Component,
+  ComponentsMap,
+  GameState,
+  ROWS,
+  SingletonComponents,
+  getCanvasInitialPosition,
+} from "./main";
 
 export interface UserEvents {
   click?: Position;
@@ -14,6 +24,7 @@ export class UserInputManager implements Component {
       click: undefined,
       obstacleDropped: undefined,
     };
+    this.registerEventListeners();
   }
 
   update(state: GameState): GameState {
@@ -64,5 +75,71 @@ export class UserInputManager implements Component {
 
   render() {
     return;
+  }
+
+  private registerEventListeners() {
+    const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
+
+    this.registerCanvasClickEvent(canvas);
+    this.registerDragAndDropEvent(canvas);
+  }
+
+  private registerCanvasClickEvent(canvas: HTMLCanvasElement) {
+    canvas.addEventListener("click", (event) => {
+      const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
+      const rect = canvas.getBoundingClientRect();
+
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      ) {
+        return; // Click was outside, exit the function.
+      }
+
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+
+      // get cell position
+      const { x: startX, y: startY } = getCanvasInitialPosition();
+      const cellX = Math.floor((x - startX) / CELL_SIZE);
+      const cellY = Math.floor((y - startY) / CELL_SIZE);
+
+      const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
+      userInputManager.userEvents.click = { x: cellX, y: cellY };
+    });
+  }
+
+  private registerDragAndDropEvent(canvas: HTMLCanvasElement) {
+    const tower = document.getElementById("tower")!;
+    const obstacle = document.getElementById("obstacle")!;
+
+    tower.addEventListener("dragstart", (event) => {
+      event.dataTransfer!.setData("text/plain", tower.id);
+    });
+
+    obstacle.addEventListener("dragstart", (event) => {
+      event.dataTransfer!.setData("text/plain", obstacle.id);
+    });
+
+    canvas.addEventListener("dragover", (event) => {
+      event.preventDefault(); // Necessary to allow dropping
+    });
+
+    canvas.addEventListener("drop", (event) => {
+      event.preventDefault();
+
+      const x = event.clientX - canvas.offsetLeft;
+      const y = event.clientY - canvas.offsetTop;
+
+      // calculate cell position
+      const { x: startX, y: startY } = getCanvasInitialPosition();
+      const cellX = Math.floor((x - startX) / CELL_SIZE);
+      const cellY = Math.floor((y - startY) / CELL_SIZE);
+
+      const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
+      userInputManager.userEvents.obstacleDropped = { x: cellX, y: cellY };
+    });
   }
 }
