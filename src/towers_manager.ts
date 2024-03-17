@@ -1,6 +1,6 @@
 import { Enemy } from "./enemies_manager";
 import { ACTION_CANVAS_ID, CELL_SIZE, Component, GameState, getCanvasInitialPosition } from "./main";
-import { GridPosition, Vector, gridPositionToVector } from "./utils/helper";
+import { GridPosition, Vector, gridPositionToVector, randomNum, vectorToGridPosition } from "./utils/helper";
 
 export interface Tower {
   id: string;
@@ -107,7 +107,14 @@ export class TowersManager implements Component {
         return { tower };
       }
     }
-    const enemyInRange = enemies[0];
+    // find random enemy
+    const enemiesInRange = enemies.filter((enemy) => {
+      const { currentPosition: enemyPosition } = enemy;
+      const enemyGridPosition = vectorToGridPosition(enemyPosition);
+      return this.isEnemyInRange(towerPosition, enemyGridPosition, tower.range);
+    });
+
+    const enemyInRange = enemiesInRange[randomNum(0, enemiesInRange.length - 1)];
 
     if (enemyInRange) {
       const { currentPosition: enemyPosition } = enemyInRange;
@@ -123,5 +130,14 @@ export class TowersManager implements Component {
     }
 
     return { tower };
+  }
+
+  private isEnemyInRange(towerPosition: GridPosition, enemyPosition: GridPosition, towerRange: number) {
+    // find if is in the range using grid position
+
+    return (
+      Math.abs(towerPosition.row - enemyPosition.row) <= towerRange &&
+      Math.abs(towerPosition.col - enemyPosition.col) <= towerRange
+    );
   }
 }

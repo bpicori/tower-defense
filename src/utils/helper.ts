@@ -49,3 +49,8 @@ export const gridPositionToVector = (gridPosition: GridPosition): Vector => {
 export const equalGridPositions = (a: GridPosition, b: GridPosition) => {
   return a.row === b.row && a.col === b.col;
 };
+
+// generate a random number between min and max (inclusive)
+export const randomNum = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};

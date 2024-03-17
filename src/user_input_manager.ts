@@ -81,7 +81,7 @@ export class UserInputManager implements Component {
       newState.towers.push({
         id: String(Date.now()),
         currentPosition: towerPosition,
-        range: 100,
+        range: 1,
         damage: 10,
         isFiring: false,
         sleep: 0,
