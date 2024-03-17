@@ -1,3 +1,4 @@
+import { Enemy } from "./enemies_manager";
 import { ACTION_CANVAS_ID, CELL_SIZE, Component, GameState, getCanvasInitialPosition } from "./main";
 import { GridPosition, Vector, gridPositionToVector } from "./utils/helper";
 
@@ -20,14 +21,22 @@ export class TowersManager implements Component {
   update(state: GameState) {
     const { towers } = state;
     const newTowers: Tower[] = [];
+    const updatedEnemies: Record<string, Enemy> = {};
 
     for (const tower of towers) {
-      const newTower = this.updateTower(tower, state);
-
+      const { tower: newTower, enemy } = this.updateTower(tower, state);
       newTowers.push(newTower);
+      if (enemy) {
+        updatedEnemies[enemy.id] = enemy;
+      }
     }
 
-    return { ...state, towers: newTowers };
+    const newEnemies = state.enemies.map((enemy) => {
+      const updatedEnemy = updatedEnemies[enemy.id];
+      return updatedEnemy || enemy;
+    });
+
+    return { ...state, towers: newTowers, enemies: newEnemies };
   }
 
   render(state: GameState) {
@@ -61,7 +70,7 @@ export class TowersManager implements Component {
     }
   }
 
-  private updateTower(tower: Tower, state: GameState): Tower {
+  private updateTower(tower: Tower, state: GameState): { tower: Tower; enemy?: Enemy } {
     const { enemies } = state;
     const { currentPosition: towerPosition, bullet } = tower;
 
@@ -70,7 +79,7 @@ export class TowersManager implements Component {
       const enemy = enemies.find((enemy) => enemy.id === enemyId);
       if (!enemy) {
         tower.bullet = undefined;
-        return tower;
+        return { tower };
       }
 
       const { currentPosition: enemyPosition } = enemy;
@@ -81,6 +90,9 @@ export class TowersManager implements Component {
 
       if (distance < 5) {
         tower.bullet = undefined;
+        const newEnemy = { ...enemy, life: enemy.life - tower.damage };
+
+        return { tower, enemy: newEnemy };
       } else {
         const bulletX = bulletPosition.x + (dx / distance) * bulletSpeed;
         const bulletY = bulletPosition.y + (dy / distance) * bulletSpeed;
@@ -91,24 +103,25 @@ export class TowersManager implements Component {
           bulletSpeed,
           enemyId,
         };
-      }
-    } else {
-      const enemyInRange = enemies[0];
 
-      if (enemyInRange) {
-        const { currentPosition: enemyPosition } = enemyInRange;
-
-        const bulletPosition = gridPositionToVector(towerPosition);
-
-        tower.bullet = {
-          bulletPosition,
-          bulletTarget: enemyPosition,
-          bulletSpeed: 10,
-          enemyId: enemyInRange.id,
-        };
+        return { tower };
       }
     }
+    const enemyInRange = enemies[0];
 
-    return tower;
+    if (enemyInRange) {
+      const { currentPosition: enemyPosition } = enemyInRange;
+
+      const bulletPosition = gridPositionToVector(towerPosition);
+
+      tower.bullet = {
+        bulletPosition,
+        bulletTarget: enemyPosition,
+        bulletSpeed: 10,
+        enemyId: enemyInRange.id,
+      };
+    }
+
+    return { tower };
   }
 }

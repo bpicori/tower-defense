@@ -7,6 +7,7 @@ export interface Enemy {
   currentPosition: Vector;
   speed: number;
   status: "alive" | "dead" | "escaped";
+  life: number;
 }
 
 export class EnemiesManager implements Component {
@@ -23,6 +24,7 @@ export class EnemiesManager implements Component {
       speed: 1,
       currentPosition,
       status: "alive",
+      life: 100,
     };
 
     return { ...state, enemies: [...enemies, newEnemy] };
@@ -43,7 +45,7 @@ export class EnemiesManager implements Component {
     for (const enemy of aliveEnemies) {
       const newEnemy = this.updateEnemy(enemy, state);
 
-      if (enemy.status !== "escaped" && newEnemy.status === "escaped") {
+      if (newEnemy.status === "escaped") {
         playerLife -= 1;
       }
 
@@ -57,6 +59,14 @@ export class EnemiesManager implements Component {
     // eslint-disable-next-line prefer-const
     let { currentPosition, speed, status } = enemy;
     const { target, obstacles, cellSize } = state;
+
+    if (enemy.life <= 0) {
+      status = "dead";
+      return {
+        ...enemy,
+        status,
+      };
+    }
 
     const currentPositionInGrid = vectorToGridPosition(currentPosition);
 
