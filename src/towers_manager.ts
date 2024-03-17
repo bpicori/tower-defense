@@ -1,30 +1,30 @@
 import { Enemy } from "./enemies_manager";
 import { ACTION_CANVAS_ID, CELL_SIZE, Component, GameState, getCanvasInitialPosition } from "./main";
-import { GridPosition, Vector, gridPositionToVector, randomNum, vectorToGridPosition } from "./utils/helper";
+import { GridPosition, Vector, gridPositionToVector, vectorToGridPosition } from "./utils/helper";
 
 export interface Tower {
   id: string;
   currentPosition: GridPosition;
   range: number;
   damage: number;
+  lastTimeFired: number;
   bullet?: {
     bulletSpeed: number;
     bulletPosition: Vector;
     bulletTarget: Vector;
     enemyId?: string;
   };
-  isFiring: boolean;
   sleep: number;
 }
 
 export class TowersManager implements Component {
-  update(state: GameState) {
+  update(state: GameState, time: number) {
     const { towers } = state;
     const newTowers: Tower[] = [];
     const updatedEnemies: Record<string, Enemy> = {};
 
     for (const tower of towers) {
-      const { tower: newTower, enemy } = this.updateTower(tower, state);
+      const { tower: newTower, enemy } = this.updateTower(tower, state, time);
       newTowers.push(newTower);
       if (enemy) {
         updatedEnemies[enemy.id] = enemy;
@@ -70,9 +70,9 @@ export class TowersManager implements Component {
     }
   }
 
-  private updateTower(tower: Tower, state: GameState): { tower: Tower; enemy?: Enemy } {
+  private updateTower(tower: Tower, state: GameState, time: number): { tower: Tower; enemy?: Enemy } {
     const { enemies } = state;
-    const { currentPosition: towerPosition, bullet } = tower;
+    const { currentPosition: towerPosition, bullet, lastTimeFired } = tower;
 
     if (bullet) {
       const { bulletPosition, bulletSpeed, enemyId } = bullet;
@@ -114,9 +114,13 @@ export class TowersManager implements Component {
       return this.isEnemyInRange(towerPosition, enemyGridPosition, tower.range);
     });
 
-    const enemyInRange = enemiesInRange[randomNum(0, enemiesInRange.length - 1)];
+    const enemyInRange = enemiesInRange[0];
 
     if (enemyInRange) {
+      if (time - lastTimeFired < 500) {
+        return { tower };
+      }
+
       const { currentPosition: enemyPosition } = enemyInRange;
 
       const bulletPosition = gridPositionToVector(towerPosition);
@@ -124,9 +128,10 @@ export class TowersManager implements Component {
       tower.bullet = {
         bulletPosition,
         bulletTarget: enemyPosition,
-        bulletSpeed: 10,
+        bulletSpeed: 5,
         enemyId: enemyInRange.id,
       };
+      tower.lastTimeFired = time;
     }
 
     return { tower };

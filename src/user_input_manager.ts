@@ -83,8 +83,8 @@ export class UserInputManager implements Component {
         currentPosition: towerPosition,
         range: 1,
         damage: 10,
-        isFiring: false,
         sleep: 0,
+        lastTimeFired: 0,
       });
 
       this.userEvents.towerDropped = undefined;

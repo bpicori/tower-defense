@@ -49,7 +49,6 @@ export interface GameState {
   start: GridPosition;
   target: GridPosition;
   canvasStartPosition: Vector;
-  cellSize: number;
   playerLife: number;
   enemies: Enemy[];
   towers: Tower[];
@@ -57,7 +56,7 @@ export interface GameState {
 
 export interface Component {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  update: (state: GameState) => GameState;
+  update: (state: GameState, time: number) => GameState;
   render: (state: GameState) => void;
 }
 
@@ -84,31 +83,14 @@ const INITIAL_STATE: GameState = {
   start: { row: 0, col: 0 },
   target: { row: ROWS - 1, col: COLS - 1 },
   canvasStartPosition: getCanvasInitialPosition(),
-  cellSize: CELL_SIZE,
   playerLife: 100,
-  enemies: [
-    // {
-    //   id: "1",
-    //   currentPosition: getCanvasInitialPosition(),
-    //   speed: 1,
-    //   status: "alive",
-    // },
-  ],
-  towers: [
-    // {
-    //   id: "1",
-    //   currentPosition: { row: 5, col: 5 },
-    //   range: 100,
-    //   damage: 10,
-    //   isFiring: false,
-    //   sleep: 0,
-    // },
-  ],
+  enemies: [],
+  towers: [],
 };
 
-async function gameLoop(state: GameState) {
+async function gameLoop(state: GameState, time: number) {
   for (const component of Object.values(SingletonComponents)) {
-    state = component.update(state);
+    state = component.update(state, time);
   }
 
   clearCanvas();
@@ -117,7 +99,7 @@ async function gameLoop(state: GameState) {
     component.render(state);
   }
 
-  requestAnimationFrame(() => gameLoop(state));
+  requestAnimationFrame((time) => gameLoop(state, time));
 }
 
 function clearCanvas() {
@@ -127,7 +109,7 @@ function clearCanvas() {
 }
 
 async function main() {
-  gameLoop(INITIAL_STATE);
+  gameLoop(INITIAL_STATE, 0);
 }
 
 main();

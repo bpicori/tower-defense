@@ -1,5 +1,5 @@
-import { ACTION_CANVAS_ID, COLS, Component, GameState, ROWS } from "./main";
-import { GridPosition, Vector, vectorToGridPosition } from "./utils/helper";
+import { ACTION_CANVAS_ID, CELL_SIZE, COLS, Component, GameState, ROWS } from "./main";
+import { GridPosition, Vector, gridPositionToVector, vectorToGridPosition } from "./utils/helper";
 import { GridNavigator } from "./utils/navigator";
 
 export interface Enemy {
@@ -14,10 +14,7 @@ export class EnemiesManager implements Component {
   addEnemy(state: GameState, position: GridPosition): GameState {
     const { enemies } = state;
 
-    const currentPosition = {
-      x: position.row * state.cellSize + state.cellSize / 2,
-      y: position.col * state.cellSize + state.cellSize / 2,
-    };
+    const currentPosition = gridPositionToVector(position);
 
     const newEnemy: Enemy = {
       id: String(Date.now()),
@@ -32,7 +29,7 @@ export class EnemiesManager implements Component {
 
   render(state: GameState) {
     for (const enemy of state.enemies) {
-      this.renderEnemy(enemy, state);
+      this.renderEnemy(enemy);
     }
   }
 
@@ -58,7 +55,7 @@ export class EnemiesManager implements Component {
   private updateEnemy(enemy: Enemy, state: GameState): Enemy {
     // eslint-disable-next-line prefer-const
     let { currentPosition, speed, status } = enemy;
-    const { target, obstacles, cellSize } = state;
+    const { target, obstacles } = state;
 
     if (enemy.life <= 0) {
       status = "dead";
@@ -84,7 +81,7 @@ export class EnemiesManager implements Component {
       return enemy;
     }
 
-    const newPosition = this.calculateNewPosition(nextPosition, currentPosition, cellSize, speed);
+    const newPosition = this.calculateNewPosition(nextPosition, currentPosition, speed);
 
     return {
       ...enemy,
@@ -111,12 +108,11 @@ export class EnemiesManager implements Component {
     return path[1];
   }
 
-  private renderEnemy(enemy: Enemy, state: GameState) {
+  private renderEnemy(enemy: Enemy) {
     const { currentPosition } = enemy;
     if (!currentPosition) return;
 
-    const { cellSize } = state;
-    const radius: number = cellSize / 4;
+    const radius: number = CELL_SIZE / 4;
     const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
     const ctx = canvas.getContext("2d")!;
 
@@ -127,9 +123,9 @@ export class EnemiesManager implements Component {
     ctx.stroke();
   }
 
-  calculateNewPosition(nextPosition: GridPosition, currentPosition: Vector, cellSize: number, speed: number): Vector {
-    const deltaX = nextPosition.row * cellSize + cellSize / 2 - currentPosition.x;
-    const deltaY = nextPosition.col * cellSize + cellSize / 2 - currentPosition.y;
+  calculateNewPosition(nextPosition: GridPosition, currentPosition: Vector, speed: number): Vector {
+    const deltaX = nextPosition.row * CELL_SIZE + CELL_SIZE / 2 - currentPosition.x;
+    const deltaY = nextPosition.col * CELL_SIZE + CELL_SIZE / 2 - currentPosition.y;
     const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
 
     const stepSize = Math.min(speed, distance);
