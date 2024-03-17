@@ -44,3 +44,7 @@ export const gridPositionToVector = (gridPosition: GridPosition): Vector => {
     y: startY + col * CELL_SIZE,
   };
 };
+
+export const equalGridPositions = (a: GridPosition, b: GridPosition) => {
+  return a.row === b.row && a.col === b.col;
+};

@@ -5,6 +5,7 @@ import { Grid } from "./grid";
 import { PlayerLife } from "./players_life";
 import { UserInputManager } from "./user_input_manager";
 import { GridPosition, Vector } from "./utils/helper";
+import { Tower, TowersManager } from "./towers_manager";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -50,6 +51,7 @@ export interface GameState {
   cellSize: number;
   playerLife: number;
   enemies: Enemy[];
+  towers: Tower[];
 }
 
 export interface Component {
@@ -63,6 +65,7 @@ export enum ComponentsMap {
   EnemiesManager = "EnemiesManager",
   PlayerLife = "PlayerLife",
   UserInputManager = "UserInputManager",
+  TowersManager = "TowersManager",
 }
 
 export const SingletonComponents: Record<ComponentsMap, Component> = {
@@ -70,6 +73,7 @@ export const SingletonComponents: Record<ComponentsMap, Component> = {
   [ComponentsMap.EnemiesManager]: new EnemiesManager(),
   [ComponentsMap.PlayerLife]: new PlayerLife(),
   [ComponentsMap.UserInputManager]: new UserInputManager(),
+  [ComponentsMap.TowersManager]: new TowersManager(),
 };
 
 export const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
@@ -77,7 +81,7 @@ export const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
 const INITIAL_STATE: GameState = {
   obstacles: [],
   start: { row: 0, col: 0 },
-  target: { row: 9, col: 9 },
+  target: { row: ROWS - 1, col: COLS - 1 },
   canvasStartPosition: getCanvasInitialPosition(),
   cellSize: CELL_SIZE,
   playerLife: 100,
@@ -89,6 +93,7 @@ const INITIAL_STATE: GameState = {
       status: "alive",
     },
   ],
+  towers: [],
 };
 
 async function gameLoop(state: GameState) {

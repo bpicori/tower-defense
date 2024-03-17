@@ -10,10 +10,11 @@ import {
   SingletonComponents,
   getCanvasInitialPosition,
 } from "./main";
-import { GridPosition, vectorToGridPosition } from "./utils/helper";
+import { GridPosition, equalGridPositions, vectorToGridPosition } from "./utils/helper";
 
 export interface UserEvents {
   click?: GridPosition;
+  towerDropped?: GridPosition;
   obstacleDropped?: GridPosition;
 }
 
@@ -37,38 +38,54 @@ export class UserInputManager implements Component {
     }
 
     if (this.userEvents.obstacleDropped) {
-      if (
-        newState.obstacles.some(
-          (obstacle) =>
-            obstacle.row === this.userEvents.obstacleDropped!.row &&
-            obstacle.col === this.userEvents.obstacleDropped!.col,
-        )
-      ) {
+      const obstaclePosition = this.userEvents.obstacleDropped;
+      const { start, target } = newState;
+
+      if (newState.obstacles.some((obstacle) => equalGridPositions(obstacle, obstaclePosition))) {
         return newState; // There is already an obstacle in this position
       }
 
       // check if the obstacle is not in the start or target position
-      if (
-        (newState.start.row === this.userEvents.obstacleDropped.row &&
-          newState.start.col === this.userEvents.obstacleDropped.col) ||
-        (newState.target.row === this.userEvents.obstacleDropped.row &&
-          newState.target.col === this.userEvents.obstacleDropped.col)
-      ) {
+      if (equalGridPositions(start, obstaclePosition) || equalGridPositions(target, obstaclePosition)) {
         return newState;
       }
 
       // check if out of bounds
-      if (
-        this.userEvents.obstacleDropped.row < 0 ||
-        this.userEvents.obstacleDropped.row >= COLS ||
-        this.userEvents.obstacleDropped.col < 0 ||
-        this.userEvents.obstacleDropped.col >= ROWS
-      ) {
+      if (this.isOutOfBounds(this.userEvents.obstacleDropped)) {
         return newState;
       }
 
       newState.obstacles.push(this.userEvents.obstacleDropped);
       this.userEvents.obstacleDropped = undefined;
+    }
+
+    if (this.userEvents.towerDropped) {
+      const towerPosition = this.userEvents.towerDropped;
+
+      if (this.isOutOfBounds(towerPosition)) {
+        return newState;
+      }
+
+      if (newState.towers.some((tower) => equalGridPositions(tower.currentPosition, towerPosition))) {
+        return newState; // There is already a tower in this position
+      }
+
+      // the tower should be dropped in an obstacle
+      if (!newState.obstacles.some((obstacle) => equalGridPositions(obstacle, towerPosition))) {
+        return newState;
+      }
+
+      // delete the obstacle
+      state.obstacles = state.obstacles.filter((obstacle) => !equalGridPositions(obstacle, towerPosition));
+
+      newState.towers.push({
+        id: String(Date.now()),
+        currentPosition: towerPosition,
+        range: 2,
+        damage: 10,
+      });
+
+      this.userEvents.towerDropped = undefined;
     }
 
     return newState;
@@ -121,7 +138,6 @@ export class UserInputManager implements Component {
       const data = {
         type: "tower",
       };
-      // event.target.classList.add('dragging');
       event.dataTransfer!.setData("text/plain", JSON.stringify(data));
     });
 
@@ -130,7 +146,7 @@ export class UserInputManager implements Component {
     });
 
     obstacle.addEventListener("dragstart", (event) => {
-      event.dataTransfer!.setData("text/plain", obstacle.id);
+      event.dataTransfer!.setData("text/plain", JSON.stringify({ type: "obstacle" }));
     });
 
     canvas.addEventListener("dragover", (event) => {
@@ -143,7 +159,7 @@ export class UserInputManager implements Component {
 
       if (!rawData) return;
 
-      // const data = JSON.parse(rawData) as { type: string };
+      const data = JSON.parse(rawData) as { type: string };
 
       const x = event.clientX - canvas.offsetLeft;
       const y = event.clientY - canvas.offsetTop;
@@ -152,7 +168,17 @@ export class UserInputManager implements Component {
       const gridPosition = vectorToGridPosition({ x, y });
       const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
 
-      userInputManager.userEvents.obstacleDropped = { row: gridPosition.row, col: gridPosition.col };
+      if (data.type === "tower") {
+        userInputManager.userEvents.towerDropped = { row: gridPosition.row, col: gridPosition.col };
+      }
+
+      if (data.type === "obstacle") {
+        userInputManager.userEvents.obstacleDropped = { row: gridPosition.row, col: gridPosition.col };
+      }
     });
+  }
+
+  private isOutOfBounds(position: GridPosition): boolean {
+    return position.row < 0 || position.row >= COLS || position.col < 0 || position.col >= ROWS;
   }
 }
