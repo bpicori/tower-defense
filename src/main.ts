@@ -8,7 +8,7 @@ import { GridPosition, Vector } from "./utils/helper";
 import { Tower, TowersManager } from "./towers_manager";
 import { mapGenerator } from "./maps/map_generator";
 
-export const GRID_CANVAS_ID = "gridCanvas";
+// export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
 export const CANVAS_WIDTH = 800;
 export const CANVAS_HEIGHT = 600;

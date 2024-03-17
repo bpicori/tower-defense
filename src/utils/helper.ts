@@ -1,4 +1,4 @@
-import { CELL_SIZE, GRID_CANVAS_ID, getCanvasInitialPosition } from "../main";
+import { CELL_SIZE, getCanvasInitialPosition } from "../main";
 
 export interface GridPosition {
   row: number;
