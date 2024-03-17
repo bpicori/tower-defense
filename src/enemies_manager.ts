@@ -1,21 +1,21 @@
-import { Position } from "./grid";
 import { ACTION_CANVAS_ID, COLS, Component, GameState, ROWS } from "./main";
+import { GridPosition, Vector, vectorToGridPosition } from "./utils/helper";
 import { GridNavigator } from "./utils/navigator";
 
 export interface Enemy {
   id: string;
-  currentPosition: Position;
+  currentPosition: Vector;
   speed: number;
   status: "alive" | "dead" | "escaped";
 }
 
 export class EnemiesManager implements Component {
-  addEnemy(state: GameState, position: Position): GameState {
+  addEnemy(state: GameState, position: GridPosition): GameState {
     const { enemies } = state;
 
     const currentPosition = {
-      x: position.x * state.cellSize + state.cellSize / 2,
-      y: position.y * state.cellSize + state.cellSize / 2,
+      x: position.row * state.cellSize + state.cellSize / 2,
+      y: position.col * state.cellSize + state.cellSize / 2,
     };
 
     const newEnemy: Enemy = {
@@ -58,12 +58,9 @@ export class EnemiesManager implements Component {
     let { currentPosition, speed, status } = enemy;
     const { target, obstacles, cellSize } = state;
 
-    const findPositionInGrid = {
-      x: Math.floor(currentPosition.x / cellSize),
-      y: Math.floor(currentPosition.y / cellSize),
-    };
+    const currentPositionInGrid = vectorToGridPosition(currentPosition);
 
-    const nextPosition = this.findNextPosition(findPositionInGrid, target, obstacles);
+    const nextPosition = this.findNextPosition(currentPositionInGrid, target, obstacles);
 
     if (!nextPosition) {
       status = "escaped";
@@ -87,13 +84,13 @@ export class EnemiesManager implements Component {
   }
 
   private findNextPosition(
-    currentPosition: Position,
-    targetPosition: Position,
-    obstacles: Position[],
-  ): Position | null {
+    currentPosition: GridPosition,
+    targetPosition: GridPosition,
+    obstacles: GridPosition[],
+  ): GridPosition | null {
     const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     for (const obstacle of obstacles) {
-      g[obstacle.y][obstacle.x] = 1;
+      g[obstacle.col][obstacle.row] = 1;
     }
 
     const path = new GridNavigator(g, currentPosition, targetPosition).findPath();
@@ -120,9 +117,9 @@ export class EnemiesManager implements Component {
     ctx.stroke();
   }
 
-  calculateNewPosition(nextPosition: Position, currentPosition: Position, cellSize: number, speed: number): Position {
-    const deltaX = nextPosition.x * cellSize + cellSize / 2 - currentPosition.x;
-    const deltaY = nextPosition.y * cellSize + cellSize / 2 - currentPosition.y;
+  calculateNewPosition(nextPosition: GridPosition, currentPosition: Vector, cellSize: number, speed: number): Vector {
+    const deltaX = nextPosition.row * cellSize + cellSize / 2 - currentPosition.x;
+    const deltaY = nextPosition.col * cellSize + cellSize / 2 - currentPosition.y;
     const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
 
     const stepSize = Math.min(speed, distance);

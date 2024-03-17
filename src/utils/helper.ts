@@ -1,5 +1,14 @@
-import { Position } from "../grid";
-import { GRID_CANVAS_ID, getCanvasInitialPosition } from "../main";
+import { CELL_SIZE, GRID_CANVAS_ID, getCanvasInitialPosition } from "../main";
+
+export interface GridPosition {
+  row: number;
+  col: number;
+}
+
+export interface Vector {
+  x: number;
+  y: number;
+}
 
 export const findMousePosition = (cellSize: number, event: MouseEvent) => {
   const canvas = document.getElementById(GRID_CANVAS_ID) as HTMLCanvasElement;
@@ -16,9 +25,22 @@ export const findMousePosition = (cellSize: number, event: MouseEvent) => {
   return { x: cellX, y: cellY };
 };
 
-export const calculateDistance = (a: Position, b: Position) => {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
+export const vectorToGridPosition = (vector: Vector): GridPosition => {
+  const { x: startX, y: startY } = getCanvasInitialPosition();
+  const { x, y } = vector;
 
-  return Math.sqrt(dx * dx + dy * dy);
+  return {
+    row: Math.floor((x - startX) / CELL_SIZE),
+    col: Math.floor((y - startY) / CELL_SIZE),
+  };
+};
+
+export const gridPositionToVector = (gridPosition: GridPosition): Vector => {
+  const { x: startX, y: startY } = getCanvasInitialPosition();
+  const { row, col } = gridPosition;
+
+  return {
+    x: startX + row * CELL_SIZE,
+    y: startY + col * CELL_SIZE,
+  };
 };

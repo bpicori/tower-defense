@@ -1,15 +1,15 @@
-import { Position } from "../grid";
+import { GridPosition } from "./helper";
 
 type Grid = number[][];
 
 export class GridNavigator {
   private grid: Grid;
-  private start: Position;
-  private end: Position;
+  private start: GridPosition;
+  private end: GridPosition;
   private visited: boolean[][];
-  private queue: Position[];
+  private queue: GridPosition[];
 
-  constructor(grid: Grid, start: Position, end: Position) {
+  constructor(grid: Grid, start: GridPosition, end: GridPosition) {
     this.grid = grid;
     this.start = start;
     this.end = end;
@@ -17,54 +17,54 @@ export class GridNavigator {
     this.queue = [];
   }
 
-  findPath(): Position[] | null {
-    if (this.grid[this.start.y][this.start.x] === 1 || this.grid[this.end.y][this.end.x] === 1) {
+  findPath(): GridPosition[] | null {
+    if (this.grid[this.start.col][this.start.row] === 1 || this.grid[this.end.col][this.end.row] === 1) {
       return null; // Start or end is blocked
     }
 
     let pathFound = false;
-    const paths: Position[][] = [];
-    this.visited[this.start.y][this.start.x] = true;
+    const paths: GridPosition[][] = [];
+    this.visited[this.start.col][this.start.row] = true;
     this.queue.push(this.start);
-    paths[this.start.y * this.grid.length + this.start.x] = [this.start];
+    paths[this.start.col * this.grid.length + this.start.row] = [this.start];
 
     while (this.queue.length > 0) {
       const current = this.queue.shift()!;
-      if (current.x === this.end.x && current.y === this.end.y) {
+      if (current.row === this.end.row && current.col === this.end.col) {
         pathFound = true;
         break;
       }
 
       const neighbors = this.getNeighbors(current);
       for (const neighbor of neighbors) {
-        this.visited[neighbor.y][neighbor.x] = true;
+        this.visited[neighbor.col][neighbor.row] = true;
         this.queue.push(neighbor);
         // Save the path to reach the neighbor
-        paths[neighbor.y * this.grid.length + neighbor.x] = paths[current.y * this.grid.length + current.x].concat([
-          neighbor,
-        ]);
+        paths[neighbor.col * this.grid.length + neighbor.row] = paths[
+          current.col * this.grid.length + current.row
+        ].concat([neighbor]);
       }
     }
 
     if (pathFound) {
-      return paths[this.end.y * this.grid.length + this.end.x];
+      return paths[this.end.col * this.grid.length + this.end.row];
     } else {
       return null;
     }
   }
 
-  private isValidMove(point: Position): boolean {
+  private isValidMove(point: GridPosition): boolean {
     return (
-      point.x >= 0 &&
-      point.y >= 0 &&
-      point.x < this.grid.length &&
-      point.y < this.grid.length &&
-      this.grid[point.y][point.x] === 0 &&
-      !this.visited[point.y][point.x]
+      point.row >= 0 &&
+      point.col >= 0 &&
+      point.row < this.grid.length &&
+      point.col < this.grid.length &&
+      this.grid[point.col][point.row] === 0 &&
+      !this.visited[point.col][point.row]
     );
   }
 
-  private getNeighbors(point: Position): Position[] {
+  private getNeighbors(point: GridPosition): GridPosition[] {
     const deltas = [
       [1, 0],
       [0, 1],
@@ -72,7 +72,7 @@ export class GridNavigator {
       [0, -1],
     ];
     return deltas
-      .map(([dx, dy]) => ({ x: point.x + dx, y: point.y + dy }))
+      .map(([dx, dy]) => ({ row: point.row + dx, col: point.col + dy }))
       .filter((neighbor) => this.isValidMove(neighbor));
   }
 }

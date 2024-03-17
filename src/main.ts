@@ -1,10 +1,10 @@
 import "./style.css";
 
 import { EnemiesManager, Enemy } from "./enemies_manager";
-import { Grid, Position } from "./grid";
+import { Grid } from "./grid";
 import { PlayerLife } from "./players_life";
 import { UserInputManager } from "./user_input_manager";
-import map from "./maps/map1.json";
+import { GridPosition, Vector } from "./utils/helper";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -31,7 +31,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   </div>
 `;
 
-export function getCanvasInitialPosition(): Position {
+export function getCanvasInitialPosition(): Vector {
   const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
 
   const gridWidth = (CANVAS_WIDTH / COLS) * COLS;
@@ -43,10 +43,10 @@ export function getCanvasInitialPosition(): Position {
 }
 
 export interface GameState {
-  obstacles: Position[];
-  start: Position;
-  target: Position;
-  canvasStartPosition: Position;
+  obstacles: GridPosition[];
+  start: GridPosition;
+  target: GridPosition;
+  canvasStartPosition: Vector;
   cellSize: number;
   playerLife: number;
   enemies: Enemy[];
@@ -75,9 +75,9 @@ export const SingletonComponents: Record<ComponentsMap, Component> = {
 export const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
 
 const INITIAL_STATE: GameState = {
-  obstacles: map,
-  start: { x: 0, y: 0 },
-  target: { x: 9, y: 9 },
+  obstacles: [],
+  start: { row: 0, col: 0 },
+  target: { row: 9, col: 9 },
   canvasStartPosition: getCanvasInitialPosition(),
   cellSize: CELL_SIZE,
   playerLife: 100,
@@ -92,8 +92,6 @@ const INITIAL_STATE: GameState = {
 };
 
 async function gameLoop(state: GameState) {
-  // state = processUserInput(state, userInput);
-
   for (const component of Object.values(SingletonComponents)) {
     state = component.update(state);
   }

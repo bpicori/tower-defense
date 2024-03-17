@@ -9,12 +9,6 @@ import {
   ACTION_CANVAS_ID,
 } from "./main";
 
-// Position in grid coordinates
-export interface Position {
-  x: number;
-  y: number;
-}
-
 export class Grid implements Component {
   cellSize: number;
   constructor() {
@@ -53,7 +47,7 @@ export class Grid implements Component {
       const { x: startX, y: startY } = getCanvasInitialPosition();
 
       ctx.beginPath();
-      ctx.rect(startX + obstacle.x * cellSize, startY + obstacle.y * cellSize, cellSize, cellSize);
+      ctx.rect(startX + obstacle.row * cellSize, startY + obstacle.col * cellSize, cellSize, cellSize);
       ctx.fillStyle = "black";
       ctx.fill();
       ctx.stroke();

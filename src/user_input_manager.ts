@@ -1,5 +1,4 @@
 import { EnemiesManager } from "./enemies_manager";
-import { Position } from "./grid";
 import {
   ACTION_CANVAS_ID,
   CELL_SIZE,
@@ -11,10 +10,11 @@ import {
   SingletonComponents,
   getCanvasInitialPosition,
 } from "./main";
+import { GridPosition, vectorToGridPosition } from "./utils/helper";
 
 export interface UserEvents {
-  click?: Position;
-  obstacleDropped?: Position;
+  click?: GridPosition;
+  obstacleDropped?: GridPosition;
 }
 
 export class UserInputManager implements Component {
@@ -40,7 +40,8 @@ export class UserInputManager implements Component {
       if (
         newState.obstacles.some(
           (obstacle) =>
-            obstacle.x === this.userEvents.obstacleDropped!.x && obstacle.y === this.userEvents.obstacleDropped!.y,
+            obstacle.row === this.userEvents.obstacleDropped!.row &&
+            obstacle.col === this.userEvents.obstacleDropped!.col,
         )
       ) {
         return newState; // There is already an obstacle in this position
@@ -48,20 +49,20 @@ export class UserInputManager implements Component {
 
       // check if the obstacle is not in the start or target position
       if (
-        (newState.start.x === this.userEvents.obstacleDropped.x &&
-          newState.start.y === this.userEvents.obstacleDropped.y) ||
-        (newState.target.x === this.userEvents.obstacleDropped.x &&
-          newState.target.y === this.userEvents.obstacleDropped.y)
+        (newState.start.row === this.userEvents.obstacleDropped.row &&
+          newState.start.col === this.userEvents.obstacleDropped.col) ||
+        (newState.target.row === this.userEvents.obstacleDropped.row &&
+          newState.target.col === this.userEvents.obstacleDropped.col)
       ) {
         return newState;
       }
 
       // check if out of bounds
       if (
-        this.userEvents.obstacleDropped.x < 0 ||
-        this.userEvents.obstacleDropped.x >= COLS ||
-        this.userEvents.obstacleDropped.y < 0 ||
-        this.userEvents.obstacleDropped.y >= ROWS
+        this.userEvents.obstacleDropped.row < 0 ||
+        this.userEvents.obstacleDropped.row >= COLS ||
+        this.userEvents.obstacleDropped.col < 0 ||
+        this.userEvents.obstacleDropped.col >= ROWS
       ) {
         return newState;
       }
@@ -107,7 +108,7 @@ export class UserInputManager implements Component {
       const cellY = Math.floor((y - startY) / CELL_SIZE);
 
       const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
-      userInputManager.userEvents.click = { x: cellX, y: cellY };
+      userInputManager.userEvents.click = { row: cellX, col: cellY };
     });
   }
 
@@ -117,8 +118,11 @@ export class UserInputManager implements Component {
 
     tower.addEventListener("dragstart", (event) => {
       (event.target as HTMLElement).classList.add("dragging");
+      const data = {
+        type: "tower",
+      };
       // event.target.classList.add('dragging');
-      event.dataTransfer!.setData("text/plain", tower.id);
+      event.dataTransfer!.setData("text/plain", JSON.stringify(data));
     });
 
     tower.addEventListener("dragend", function (e) {
@@ -135,17 +139,20 @@ export class UserInputManager implements Component {
 
     canvas.addEventListener("drop", (event) => {
       event.preventDefault();
+      const rawData = event.dataTransfer!.getData("text/plain");
+
+      if (!rawData) return;
+
+      // const data = JSON.parse(rawData) as { type: string };
 
       const x = event.clientX - canvas.offsetLeft;
       const y = event.clientY - canvas.offsetTop;
 
       // calculate cell position
-      const { x: startX, y: startY } = getCanvasInitialPosition();
-      const cellX = Math.floor((x - startX) / CELL_SIZE);
-      const cellY = Math.floor((y - startY) / CELL_SIZE);
-
+      const gridPosition = vectorToGridPosition({ x, y });
       const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
-      userInputManager.userEvents.obstacleDropped = { x: cellX, y: cellY };
+
+      userInputManager.userEvents.obstacleDropped = { row: gridPosition.row, col: gridPosition.col };
     });
   }
 }
