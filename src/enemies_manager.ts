@@ -1,13 +1,11 @@
 import { Position } from "./grid";
 import { ACTION_CANVAS_ID, COLS, Component, GameState, ROWS } from "./main";
-import { GridNavigator, findPath } from "./utils/navigator";
+import { GridNavigator } from "./utils/navigator";
 
 export interface Enemy {
   id: string;
-  currentPosition?: Position;
-  path?: Position[];
+  currentPosition: Position;
   speed: number;
-  targetPositionIndex: number;
   status: "alive" | "dead" | "escaped";
 }
 
@@ -15,7 +13,6 @@ export class EnemiesManager implements Component {
   addEnemy(state: GameState, position: Position): GameState {
     const { enemies } = state;
 
-    const path = this.findPath(state.obstacles, position, state.target, state.cellSize);
     const currentPosition = {
       x: position.x * state.cellSize + state.cellSize / 2,
       y: position.y * state.cellSize + state.cellSize / 2,
@@ -25,9 +22,7 @@ export class EnemiesManager implements Component {
       id: String(Date.now()),
       speed: 1,
       currentPosition,
-      targetPositionIndex: 0,
       status: "alive",
-      path,
     };
 
     return { ...state, enemies: [...enemies, newEnemy] };
@@ -60,74 +55,66 @@ export class EnemiesManager implements Component {
 
   private updateEnemy(enemy: Enemy, state: GameState): Enemy {
     // eslint-disable-next-line prefer-const
-    let { currentPosition, path, speed, targetPositionIndex, status } = enemy;
-    const { start, target, obstacles, canvasStartPosition, cellSize } = state;
+    let { currentPosition, speed, status } = enemy;
+    const { target, obstacles, cellSize } = state;
 
-    if (!path) {
-      path = this.findPath(obstacles, start, target, cellSize);
-    }
+    const findPositionInGrid = {
+      x: Math.floor(currentPosition.x / cellSize),
+      y: Math.floor(currentPosition.y / cellSize),
+    };
 
-    if (!currentPosition) {
-      currentPosition = { ...canvasStartPosition };
+    const nextPosition = this.findNextPosition(findPositionInGrid, target, obstacles);
+
+    if (!nextPosition) {
+      status = "escaped";
+      return {
+        ...enemy,
+        status,
+      };
     }
 
     if (status !== "alive") {
       return enemy;
     }
 
-    const targetPosition = path[targetPositionIndex];
-
-    const deltaX = targetPosition.x - currentPosition.x;
-    const deltaY = targetPosition.y - currentPosition.y;
-    const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
-
-    if (distance === 0) {
-      targetPositionIndex += 1;
-
-      if (targetPositionIndex >= path.length) {
-        status = "escaped";
-      }
-      return {
-        ...enemy,
-        currentPosition,
-        path,
-        targetPositionIndex,
-        status,
-      };
-    }
-
-    const stepSize = Math.min(speed, distance);
-    const stepRatio = stepSize / distance;
-
-    const newPosition = {
-      x: currentPosition.x + deltaX * stepRatio,
-      y: currentPosition.y + deltaY * stepRatio,
-    };
+    const newPosition = this.calculateNewPosition(nextPosition, currentPosition, cellSize, speed);
 
     return {
       ...enemy,
       currentPosition: newPosition,
-      path,
-      targetPositionIndex,
       status,
     };
   }
 
-  private findPath(obstacles: Position[], start: Position, target: Position, cellSize: number): Position[] {
+  private findNextPosition(
+    currentPosition: Position,
+    targetPosition: Position,
+    obstacles: Position[],
+  ): Position | null {
     const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     for (const obstacle of obstacles) {
       g[obstacle.y][obstacle.x] = 1;
     }
-    const navigator = new GridNavigator(g, start, target);
-    const path = navigator.findPath();
+
+    const path = new GridNavigator(g, currentPosition, targetPosition).findPath();
+    if (!path) {
+      return null;
+    }
+
+    return path[1];
+  }
+
+  private findPath(obstacles: Position[], start: Position, target: Position): Position[] {
+    const g = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    for (const obstacle of obstacles) {
+      g[obstacle.y][obstacle.x] = 1;
+    }
+    const path = new GridNavigator(g, start, target).findPath();
     if (!path) {
       throw new Error("No path found");
     }
 
-    return path.map((point) => ({
-      x: point.x * cellSize + cellSize / 2,
-      y: point.y * cellSize + cellSize / 2,
-    }));
+    return path;
   }
 
   private renderEnemy(enemy: Enemy, state: GameState) {
@@ -144,5 +131,21 @@ export class EnemiesManager implements Component {
     ctx.fillStyle = "red";
     ctx.fill();
     ctx.stroke();
+  }
+
+  calculateNewPosition(nextPosition: Position, currentPosition: Position, cellSize: number, speed: number): Position {
+    const deltaX = nextPosition.x * cellSize + cellSize / 2 - currentPosition.x;
+    const deltaY = nextPosition.y * cellSize + cellSize / 2 - currentPosition.y;
+    const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+
+    const stepSize = Math.min(speed, distance);
+    const stepRatio = stepSize / distance;
+
+    const newPosition = {
+      x: currentPosition.x + deltaX * stepRatio,
+      y: currentPosition.y + deltaY * stepRatio,
+    };
+
+    return newPosition;
   }
 }

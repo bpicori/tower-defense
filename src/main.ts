@@ -3,6 +3,7 @@ import "./style.css";
 import { EnemiesManager, Enemy } from "./enemies_manager";
 import { Grid, Position } from "./grid";
 import { PlayerLife } from "./players_life";
+import { UserInputManager } from "./user_input_manager";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -49,23 +50,27 @@ export interface GameState {
 }
 
 export interface Component {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   update: (state: GameState) => GameState;
   render: (state: GameState) => void;
 }
 
-enum ComponentsMap {
+export enum ComponentsMap {
   Grid = "Grid",
   EnemiesManager = "EnemiesManager",
   PlayerLife = "PlayerLife",
+  UserInputManager = "UserInputManager",
 }
 
-const componentsMap: Record<ComponentsMap, Component> = {
+export const SingletonComponents: Record<ComponentsMap, Component> = {
   [ComponentsMap.Grid]: new Grid(),
   [ComponentsMap.EnemiesManager]: new EnemiesManager(),
   [ComponentsMap.PlayerLife]: new PlayerLife(),
+  [ComponentsMap.UserInputManager]: new UserInputManager(),
 };
 
 const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
+
 const INITIAL_STATE: GameState = {
   obstacles: [],
   start: { x: 0, y: 0 },
@@ -76,34 +81,17 @@ const INITIAL_STATE: GameState = {
   enemies: [
     {
       id: "1",
+      currentPosition: getCanvasInitialPosition(),
       speed: 1,
-      targetPositionIndex: 0,
       status: "alive",
     },
   ],
 };
 
-function processUserInput(state: GameState, userEvents: UserEvents): GameState {
-  let newState = { ...state }; // Create a copy of the current state
-
-  if (userEvents.click) {
-    const enemyManager = componentsMap[ComponentsMap.EnemiesManager] as EnemiesManager;
-    newState = enemyManager.addEnemy(newState, userEvents.click);
-    userEvents.click = undefined;
-  }
-
-  if (userEvents.obstacleDropped) {
-    newState.obstacles.push(userEvents.obstacleDropped);
-    userEvents.obstacleDropped = undefined;
-  }
-
-  return newState;
-}
-
 async function gameLoop(state: GameState) {
-  state = processUserInput(state, userInput);
+  // state = processUserInput(state, userInput);
 
-  for (const component of Object.values(componentsMap)) {
+  for (const component of Object.values(SingletonComponents)) {
     state = component.update(state);
   }
 
@@ -112,22 +100,12 @@ async function gameLoop(state: GameState) {
   const ctx = canvas.getContext("2d")!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  for (const component of Object.values(componentsMap)) {
+  for (const component of Object.values(SingletonComponents)) {
     component.render(state);
   }
 
   requestAnimationFrame(() => gameLoop(state));
 }
-
-interface UserEvents {
-  click?: Position;
-  obstacleDropped?: Position;
-}
-
-const userInput: UserEvents = {
-  click: undefined,
-  obstacleDropped: undefined,
-};
 
 async function main() {
   document.addEventListener("click", (event) => {
@@ -151,7 +129,8 @@ async function main() {
     const cellX = Math.floor((x - startX) / CELL_SIZE);
     const cellY = Math.floor((y - startY) / CELL_SIZE);
 
-    userInput.click = { x: cellX, y: cellY };
+    const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
+    userInputManager.userEvents.click = { x: cellX, y: cellY };
   });
 
   // Towers drag and drop logic
@@ -182,7 +161,8 @@ async function main() {
     const cellX = Math.floor((x - startX) / CELL_SIZE);
     const cellY = Math.floor((y - startY) / CELL_SIZE);
 
-    userInput.obstacleDropped = { x: cellX, y: cellY };
+    const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
+    userInputManager.userEvents.obstacleDropped = { x: cellX, y: cellY };
   });
 
   gameLoop(INITIAL_STATE);
