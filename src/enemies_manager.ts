@@ -20,7 +20,7 @@ export class EnemiesManager implements Component {
 
     const newEnemy: Enemy = {
       id: String(Date.now()),
-      speed: 1,
+      speed: 10,
       currentPosition,
       status: "alive",
     };

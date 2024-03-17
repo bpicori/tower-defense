@@ -113,10 +113,16 @@ export class UserInputManager implements Component {
 
   private registerDragAndDropEvent(canvas: HTMLCanvasElement) {
     const tower = document.getElementById("tower")!;
-    const obstacle = document.getElementById("obstacle")!;
+    const obstacle = document.getElementById("obstacle")! as HTMLElement;
 
     tower.addEventListener("dragstart", (event) => {
+      (event.target as HTMLElement).classList.add("dragging");
+      // event.target.classList.add('dragging');
       event.dataTransfer!.setData("text/plain", tower.id);
+    });
+
+    tower.addEventListener("dragend", function (e) {
+      (e.target as HTMLElement).classList.remove("dragging");
     });
 
     obstacle.addEventListener("dragstart", (event) => {

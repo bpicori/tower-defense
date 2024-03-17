@@ -17,8 +17,10 @@ export const COLS = 10;
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="game-container">
     <div class="tower-panel">
-      <div class="tower" draggable="true" id="tower">Tower</div>
-      <div class="obstacle" draggable="true" id="obstacle">Obstacle</div>
+        <div class="tower" draggable="true" id="tower">
+          <div class="range"></div>
+        </div>
+        <div class="obstacle" draggable="true" id="obstacle"></div>
     </div>
     <div class="canvas-container">
       <div class="player-life">
