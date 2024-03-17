@@ -39,9 +39,10 @@ export const gridPositionToVector = (gridPosition: GridPosition): Vector => {
   const { x: startX, y: startY } = getCanvasInitialPosition();
   const { row, col } = gridPosition;
 
+  // change this function to the center of the cell
   return {
-    x: startX + row * CELL_SIZE,
-    y: startY + col * CELL_SIZE,
+    x: startX + row * CELL_SIZE + CELL_SIZE / 2,
+    y: startY + col * CELL_SIZE + CELL_SIZE / 2,
   };
 };
 

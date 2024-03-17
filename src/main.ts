@@ -6,7 +6,7 @@ import { PlayerLife } from "./players_life";
 import { UserInputManager } from "./user_input_manager";
 import { GridPosition, Vector } from "./utils/helper";
 import { Tower, TowersManager } from "./towers_manager";
-import { mapGenerator } from "./maps/map_generator";
+// import { mapGenerator } from "./maps/map_generator";
 
 export const GRID_CANVAS_ID = "gridCanvas";
 export const ACTION_CANVAS_ID = "actionCanvas";
@@ -80,21 +80,30 @@ export const SingletonComponents: Record<ComponentsMap, Component> = {
 export const CELL_SIZE = Math.min(CANVAS_WIDTH / COLS, CANVAS_HEIGHT / ROWS);
 
 const INITIAL_STATE: GameState = {
-  obstacles: mapGenerator("1"),
+  obstacles: [{ row: 4, col: 5 }],
   start: { row: 0, col: 0 },
   target: { row: ROWS - 1, col: COLS - 1 },
   canvasStartPosition: getCanvasInitialPosition(),
   cellSize: CELL_SIZE,
   playerLife: 100,
   enemies: [
+    // {
+    //   id: "1",
+    //   currentPosition: getCanvasInitialPosition(),
+    //   speed: 1,
+    //   status: "alive",
+    // },
+  ],
+  towers: [
     {
       id: "1",
-      currentPosition: getCanvasInitialPosition(),
-      speed: 1,
-      status: "alive",
+      currentPosition: { row: 5, col: 5 },
+      range: 100,
+      damage: 10,
+      isFiring: false,
+      sleep: 0,
     },
   ],
-  towers: [],
 };
 
 async function gameLoop(state: GameState) {

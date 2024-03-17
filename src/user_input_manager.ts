@@ -81,8 +81,10 @@ export class UserInputManager implements Component {
       newState.towers.push({
         id: String(Date.now()),
         currentPosition: towerPosition,
-        range: 2,
+        range: 100,
         damage: 10,
+        isFiring: false,
+        sleep: 0,
       });
 
       this.userEvents.towerDropped = undefined;
@@ -164,7 +166,6 @@ export class UserInputManager implements Component {
       const x = event.clientX - canvas.offsetLeft;
       const y = event.clientY - canvas.offsetTop;
 
-      // calculate cell position
       const gridPosition = vectorToGridPosition({ x, y });
       const userInputManager = SingletonComponents[ComponentsMap.UserInputManager] as UserInputManager;
 
