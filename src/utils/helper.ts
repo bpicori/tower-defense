@@ -1,5 +1,5 @@
-import { Position } from "./grid";
-import { GRID_CANVAS_ID, getCanvasInitialPosition } from "./main";
+import { Position } from "../grid";
+import { GRID_CANVAS_ID, getCanvasInitialPosition } from "../main";
 
 export const findMousePosition = (cellSize: number, event: MouseEvent) => {
   const canvas = document.getElementById(GRID_CANVAS_ID) as HTMLCanvasElement;

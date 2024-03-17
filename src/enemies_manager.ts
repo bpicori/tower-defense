@@ -1,6 +1,6 @@
 import { Position } from "./grid";
 import { ACTION_CANVAS_ID, COLS, Component, GameState, ROWS } from "./main";
-import { GridNavigator } from "./navigator";
+import { GridNavigator, findPath } from "./utils/navigator";
 
 export interface Enemy {
   id: string;

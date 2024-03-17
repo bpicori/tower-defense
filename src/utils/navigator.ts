@@ -1,14 +1,15 @@
+import { Position } from "../grid";
+
 type Grid = number[][];
-type Point = { x: number; y: number };
 
 export class GridNavigator {
   private grid: Grid;
-  private start: Point;
-  private end: Point;
+  private start: Position;
+  private end: Position;
   private visited: boolean[][];
-  private queue: Point[];
+  private queue: Position[];
 
-  constructor(grid: Grid, start: Point, end: Point) {
+  constructor(grid: Grid, start: Position, end: Position) {
     this.grid = grid;
     this.start = start;
     this.end = end;
@@ -16,36 +17,13 @@ export class GridNavigator {
     this.queue = [];
   }
 
-  private isValidMove(point: Point): boolean {
-    return (
-      point.x >= 0 &&
-      point.y >= 0 &&
-      point.x < this.grid.length &&
-      point.y < this.grid.length &&
-      this.grid[point.y][point.x] === 0 &&
-      !this.visited[point.y][point.x]
-    );
-  }
-
-  private getNeighbors(point: Point): Point[] {
-    const deltas = [
-      [1, 0],
-      [0, 1],
-      [-1, 0],
-      [0, -1],
-    ]; // Right, Down, Left, Up
-    return deltas
-      .map(([dx, dy]) => ({ x: point.x + dx, y: point.y + dy }))
-      .filter((neighbor) => this.isValidMove(neighbor));
-  }
-
-  findPath(): Point[] | null {
+  findPath(): Position[] | null {
     if (this.grid[this.start.y][this.start.x] === 1 || this.grid[this.end.y][this.end.x] === 1) {
       return null; // Start or end is blocked
     }
 
     let pathFound = false;
-    const paths: Point[][] = [];
+    const paths: Position[][] = [];
     this.visited[this.start.y][this.start.x] = true;
     this.queue.push(this.start);
     paths[this.start.y * this.grid.length + this.start.x] = [this.start];
@@ -73,5 +51,28 @@ export class GridNavigator {
     } else {
       return null;
     }
+  }
+
+  private isValidMove(point: Position): boolean {
+    return (
+      point.x >= 0 &&
+      point.y >= 0 &&
+      point.x < this.grid.length &&
+      point.y < this.grid.length &&
+      this.grid[point.y][point.x] === 0 &&
+      !this.visited[point.y][point.x]
+    );
+  }
+
+  private getNeighbors(point: Position): Position[] {
+    const deltas = [
+      [1, 0],
+      [0, 1],
+      [-1, 0],
+      [0, -1],
+    ];
+    return deltas
+      .map(([dx, dy]) => ({ x: point.x + dx, y: point.y + dy }))
+      .filter((neighbor) => this.isValidMove(neighbor));
   }
 }
