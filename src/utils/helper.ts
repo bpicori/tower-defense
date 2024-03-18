@@ -10,21 +10,6 @@ export interface Vector {
   y: number;
 }
 
-export const findMousePosition = (cellSize: number, event: MouseEvent) => {
-  const canvas = document.getElementById(GRID_CANVAS_ID) as HTMLCanvasElement;
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-
-  // get cell position
-  const { x: startX, y: startY } = getCanvasInitialPosition();
-  const cellX = Math.floor((x - startX) / cellSize);
-  const cellY = Math.floor((y - startY) / cellSize);
-
-  console.log(cellX, cellY);
-  return { x: cellX, y: cellY };
-};
-
 export const vectorToGridPosition = (vector: Vector): GridPosition => {
   const { x: startX, y: startY } = getCanvasInitialPosition();
   const { x, y } = vector;

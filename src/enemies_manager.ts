@@ -1,6 +1,8 @@
 import { ACTION_CANVAS_ID, CELL_SIZE, COLS, Component, GameState, ROWS } from "./main";
 import { GridPosition, Vector, gridPositionToVector, vectorToGridPosition } from "./utils/helper";
 import { GridNavigator } from "./utils/navigator";
+import sprite from "./sprite.svg";
+import { SpriteMap } from "./grid";
 
 export interface Enemy {
   id: string;
@@ -8,9 +10,16 @@ export interface Enemy {
   speed: number;
   status: "alive" | "dead" | "escaped";
   life: number;
+  direction?: Vector;
 }
 
 export class EnemiesManager implements Component {
+  image: HTMLImageElement;
+  constructor() {
+    this.image = new Image();
+    this.image.src = sprite;
+  }
+
   addEnemy(state: GameState, position: GridPosition): GameState {
     const { enemies } = state;
 
@@ -18,7 +27,7 @@ export class EnemiesManager implements Component {
 
     const newEnemy: Enemy = {
       id: String(Date.now()),
-      speed: 1,
+      speed: 0.5,
       currentPosition,
       status: "alive",
       life: 100,
@@ -82,10 +91,12 @@ export class EnemiesManager implements Component {
     }
 
     const newPosition = this.calculateNewPosition(nextPosition, currentPosition, speed);
+    const newDirection = this.findDirection(currentPosition, newPosition);
 
     return {
       ...enemy,
       currentPosition: newPosition,
+      direction: newDirection,
       status,
     };
   }
@@ -110,20 +121,26 @@ export class EnemiesManager implements Component {
 
   private renderEnemy(enemy: Enemy) {
     const { currentPosition } = enemy;
-    if (!currentPosition) return;
 
-    const radius: number = CELL_SIZE / 4;
     const canvas = document.getElementById(ACTION_CANVAS_ID) as HTMLCanvasElement;
     const ctx = canvas.getContext("2d")!;
 
-    ctx.beginPath();
-    ctx.arc(currentPosition.x, currentPosition.y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = "red";
-    ctx.fill();
-    ctx.stroke();
+    const { x, y, width, height } = SpriteMap.SOLDIER;
+
+    ctx.drawImage(
+      this.image,
+      x,
+      y,
+      width,
+      height,
+      currentPosition.x - CELL_SIZE / 2,
+      currentPosition.y - CELL_SIZE / 2,
+      CELL_SIZE,
+      CELL_SIZE,
+    );
   }
 
-  calculateNewPosition(nextPosition: GridPosition, currentPosition: Vector, speed: number): Vector {
+  private calculateNewPosition(nextPosition: GridPosition, currentPosition: Vector, speed: number): Vector {
     const deltaX = nextPosition.row * CELL_SIZE + CELL_SIZE / 2 - currentPosition.x;
     const deltaY = nextPosition.col * CELL_SIZE + CELL_SIZE / 2 - currentPosition.y;
     const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
@@ -137,5 +154,17 @@ export class EnemiesManager implements Component {
     };
 
     return newPosition;
+  }
+
+  private findDirection(currentPosition: Vector, nextPosition: Vector): Vector {
+    const deltaX = nextPosition.x - currentPosition.x;
+    const deltaY = nextPosition.y - currentPosition.y;
+
+    const distance = Math.sqrt(deltaX ** 2 + deltaY ** 2);
+
+    return {
+      x: deltaX / distance,
+      y: deltaY / distance,
+    };
   }
 }

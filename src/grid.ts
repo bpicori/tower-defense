@@ -2,7 +2,7 @@ import { COLS, ROWS, getCanvasInitialPosition, Component, GameState, ACTION_CANV
 import sprite from "./sprite.svg";
 import { GridPosition } from "./utils/helper";
 
-const SpriteMap = {
+export const SpriteMap = {
   ROAD: { x: 1281, y: 386, width: 60, height: 60 },
   OBSTACLE: {
     x: 1219,
@@ -10,15 +10,19 @@ const SpriteMap = {
     width: 60,
     height: 60,
   },
+  SOLDIER: {
+    x: 962,
+    y: 646,
+    width: 60,
+    height: 60,
+  },
 };
 
 export class Grid implements Component {
   image: HTMLImageElement;
-  loaded: boolean;
   constructor() {
     this.image = new Image();
     this.image.src = sprite;
-    this.loaded = false;
   }
 
   update(state: GameState): GameState {
